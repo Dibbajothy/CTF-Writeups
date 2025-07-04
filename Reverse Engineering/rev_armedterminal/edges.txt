@@ -1,0 +1,9 @@
+Continuing.
+udf #  0  ->  0x000100a0
+udf # 20  ->  0x000100e8
+udf # 21  ->  0x00010124
+udf #  4  ->  0x00010140
+udf # 19  ->  0x00010130
+udf #  5  ->  0x00010308
+[Inferior 1 (process 93) exited with code 05]
+quit

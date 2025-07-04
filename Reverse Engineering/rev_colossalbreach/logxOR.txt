@@ -1,0 +1,130 @@
+ls
+pwd
+id
+whoami
+cd /root/
+echo "HI" > hey.txt
+…
+adam : "supers3cur3passw0rd"
+clear
+bye bye.
+``` | `xxd -p logs \| tr -d '\n' \| perl -pe 's/../sprintf("%c",hex($&)^0x19)/ge'` |
+| 4. What was stolen | Full interactive **shell transcript of a privileged session**, including:  
+  * directory layout of `/root`, `/opt`, `/home/htb`  
+  * two plaintext test messages (“HI”, “yoo sup boiiii”)  
+  * **Credential leak:** `adam : "supers3cur3passw0rd"` (appears to have been copied out of `pass.txt`) |
+| 5. How the breach happened | The attacker (or an insider) deployed `brainstorm.ko`, started it with `insmod`, then quietly collected keystrokes. Every printable character was XOR-25-encoded and appended to `logs` for later pickup. No network transfer is visible yet; exfil could be a scheduled downlink burst or a manual retrieval on next maintenance window. |
+
+---
+
+### Immediate containment & remediation
+
+1. **Unload and blacklist the rogue module**  
+   ```bash
+   rmmod brainstorm
+   echo "blacklist brainstorm" >> /etc/modprobe.d/blacklist.conf
+
+
+ls
+pwd
+clear
+id
+whoami
+cd /opt (
+ls
+cd /root/
+ls -la
+echo _RSHIFT__RSHIFT__RSHIFT_"_LSHIFT__LSHIFT__LSHIFT__LSHIFT_H_LSHIFT_I_RSHIFT_" _RSHIFT__RSHIFT__RSHIFT_> hey.txt (HI)
+cat hey.txt
+cd /home/
+ls
+cd htb
+ls
+cd _LSHIFT_Desktop
+ls
+echo _RSHIFT_"yoo sup boiiii_RSHIFT_" _RSHIFT_> hello.txt
+cat hello.txt
+cd /root/adam
+nano pass.txt
+adam _RSHIFT__RSHIFT__RSHIFT__RSHIFT__RSHIFT_: _RSHIFT__RSHIFT__RSHIFT__RSHIFT__RSHIFT__RSHIFT__RSHIFT_"supers3cur3passw0rd_RSHIFT_"_LCTRL__LCTRL_xy
+clear
+bye bye.
+
+
+
+/* WARNING: Function: __fentry__ replaced with injection: fentry */
+/* WARNING: Function: __x86_return_thunk replaced with injection: x86_return_thunk */
+/* WARNING: Removing unreachable block (ram,0x001002ef) */
+/* WARNING: Removing unreachable block (ram,0x0010030e) */
+/* WARNING: Unknown calling convention */
+
+int spy_init(void)
+
+{
+  dentry *pdVar1;
+  long lVar2;
+  undefined8 in_R9;
+  undefined8 uVar3;
+  
+  uVar3 = 0x10028c;
+  pdVar1 = (dentry *)0xffffffea;
+  if ((uint)codes < 3) {
+    pdVar1 = (dentry *)debugfs_create_dir("spyyy",0);
+    subdir = pdVar1;
+    if (pdVar1 < (dentry *)0xfffffffffffff001) {
+      if (pdVar1 != (dentry *)0x0) {
+        lVar2 = debugfs_create_file(&DAT_00100c6c,0x100,pdVar1,0,&keys_fops,in_R9,uVar3);
+        if (lVar2 != 0) {
+          register_keyboard_notifier(&spy_blk);
+          _printk(&DAT_00100c71);
+          pdVar1 = (dentry *)0x0;
+          goto LAB_0010030e;
+        }
+        debugfs_remove(subdir);
+      }
+      return -2;
+    }
+  }
+LAB_0010030e:
+  return (int)pdVar1;
+}
+
+                             DAT_00100c71                                    XREF[1]:     spy_init:00100300 (*)   
+        00100c71 01              ??         01h
+        00100c72 36              ??         36h    6
+        00100c73 77              ??         77h    w
+        00100c74 30              ??         30h    0
+        00100c75 30              ??         30h    0
+        00100c76 74              ??         74h    t
+        00100c77 77              ??         77h    w
+        00100c78 30              ??         30h    0
+        00100c79 30              ??         30h    0
+        00100c7a 74              ??         74h    t
+        00100c7b 0a              ??         0Ah
+        00100c7c 00              ??         00h
+
+this function maybe the start of module .. and thhis should print the messaage
+
+
+
+The two-byte prefix (0x01, ‘6’) is just the KERN_INFO level; the actual string that comes out in the log is:
+
+w00tw00t
+
+
+└─$ nc 94.237.121.185 31580
+[Quiz] ColossalBreach
+Enter all answers correctly to receive the flag
+Q1 (Attempt 1/3): Who is the module's author? 0xEr3n
+Q2 (Attempt 1/3): What is the name of the function used to register keyboard events? register_keyboard_notifier
+Q3 (Attempt 1/3): What is the name of the function that converts keycodes to strings? keycode_to_string
+Q4 (Attempt 1/3): What file does the module create to store logs? Provide the full path /sys/kernel/debug/spyyy/keys
+Q5 (Attempt 1/3): What message does the module print when imported? w00tw00t
+Q6 (Attempt 1/3): What is the XOR key used to obfuscate the keys? 19
+That was incorrect, try again.
+Q6 (Attempt 2/3): What is the XOR key used to obfuscate the keys? XOR-25
+That was incorrect, try again.
+Q6 (Attempt 3/3): What is the XOR key used to obfuscate the keys? 25
+Q7 (Attempt 1/3): What is the password entered for 'adam'? supers3cur3passw0rd
+Well done!
+HTB{s34l_up_th3_br34ch}

